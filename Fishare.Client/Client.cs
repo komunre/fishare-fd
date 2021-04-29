@@ -37,7 +37,8 @@ namespace Fishare.Client {
 
             sender.Send(data.ToArray());
             sender.Send(fileContent);
-            Console.WriteLine("File received");
+            Console.WriteLine("Sending ${0} bytes file", fileContent.Length);
+            Console.WriteLine("File sended");
         }
 
         public async void ReceiveFiles() {

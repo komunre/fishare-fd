@@ -7,9 +7,15 @@ using System.Threading.Tasks;
 using System.Linq;
 
 namespace Fishare.Server {
+
+    public enum ClientStatus {
+        BUSY,
+        FREE,
+    }
     public class Server {
         private Socket listener;
         private Dictionary<string, Socket> clients = new Dictionary<string, Socket>();
+        private Dictionary<string, ClientStatus> clientStatuses = new Dictionary<string, ClientStatus>();
         public int ClientsCounter {
             get => clients.Count;
         }
@@ -33,44 +39,56 @@ namespace Fishare.Server {
                     Socket client = listener.Accept();
                     string ident = FishareRandom.RandomString();
                     clients.Add(ident, client);
+                    clientStatuses.Add(ident, ClientStatus.FREE);
                     client.Send(Encoding.UTF8.GetBytes(ident));
                     Console.WriteLine("Client connected");
                 }
             });
         }
 
+        public void CloseConnection(int client) {   
+            if (!clients.ElementAt(client).Value.Connected) {
+                return;
+            }
+            clients.ElementAt(client).Value.Shutdown(SocketShutdown.Both);
+            clients.ElementAt(client).Value.Disconnect(false);
+            clients.ElementAt(client).Value.Close();
+            Console.WriteLine("Connection closed");
+        }
         public async void AcceptFiles(int client) {
             await Task.Run(() => {
+                if (clientStatuses.ElementAt(client).Value == ClientStatus.BUSY) {
+                    return;
+                }
+                clientStatuses[clients.ElementAt(client).Key] = ClientStatus.BUSY;
                 byte[] file_info = new byte[114];
+                if (!clients.ElementAt(client).Value.Connected || clients.ElementAt(client).Value == null) {
+                    return;
+                }
                 if (clients.ElementAt(client).Value != null) {
                     try {
                         int received = clients.ElementAt(client).Value.Receive(file_info);
                     }
-                    catch {
-                        Console.WriteLine("Connection closed");
-                        clients.ElementAt(client).Value.Close();
+                    catch (SocketException){
+                        CloseConnection(client);
+                        return;
                     }
                 }
-                if (!clients.ElementAt(client).Value.Connected){
-                    return;
-                }
-                if (clients.ElementAt(client).Value == null){
-                    return;
-                }
                 byte[] file_size;
-                if (!BitConverter.IsLittleEndian){
+                /*if (!BitConverter.IsLittleEndian) {
                     Console.WriteLine("Converting to big endian");
                     file_size = new byte[] {file_info[110], file_info[111], file_info[112], file_info[113]};
                 }
                 else {
                     Console.WriteLine("Converting to little endian");
                     file_size = new byte[] {file_info[113], file_info[112], file_info[111], file_info[110]};
-                }
+                }*/
+                file_size = new byte[] {file_info[110], file_info[111], file_info[112], file_info[113]};
+                Console.WriteLine(String.Format("Receiving {0} bytes file", BitConverter.ToInt32(file_size)));
                 byte[] fileData = new byte[BitConverter.ToInt32(file_size)];
-                if (clients.ElementAt(client).Value != null) {
-                    int received = clients.ElementAt(client).Value.Receive(fileData);
-                }
-
+                int receivedFile = clients.ElementAt(client).Value.Receive(fileData);
+                
+                Console.WriteLine("Sending file...");
                 var receiver = file_info.Skip(25).Take(25);
                 Socket receiverSock;
                 List<byte> dataToSend = new List<byte>();
@@ -85,6 +103,7 @@ namespace Fishare.Server {
                 else {
                     Console.WriteLine("Error in getting receiver");
                 }
+                clientStatuses[clients.ElementAt(client).Key] = ClientStatus.FREE;
             });
         }
     }
