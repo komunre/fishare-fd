@@ -16,6 +16,7 @@ namespace Fishare.Server {
         private Socket listener;
         private Dictionary<string, FiSocket> clients = new Dictionary<string, FiSocket>();
         private List<ClientStatus> clientStatuses = new List<ClientStatus>();
+        private const string _dummySock = "unavailable";
         public int ClientsCounter {
             get => clients.Count;
         }
@@ -46,20 +47,20 @@ namespace Fishare.Server {
             });
         }
 
-        public void CloseConnection(Socket client) {   
+        public void CloseConnection(ref Socket client) {   
             client.Shutdown(SocketShutdown.Both);
             client.Disconnect(false);
-            client.Close();
+            client.Dispose();
             Console.WriteLine("Connection closed");
         }
 
-        private byte[] ReceiveAll(uint size, Socket sock) {
+        private byte[] ReceiveAll(uint size, ref Socket sock) {
             int total = 0;
             byte[] data = new byte[size];
             while (total < size) {
                 int getted = sock.Receive(data, total, (int)(size - total), SocketFlags.None);
                 if (getted == 0) {
-                    CloseConnection(sock);
+                    CloseConnection(ref sock);
                     data = null;
                     break;
                 }
@@ -73,7 +74,13 @@ namespace Fishare.Server {
         }
         public async void AcceptFiles(int client) {
             await Task.Run(() => {
+                if (clients.Count == 0) {
+                    return;
+                }
                 List<FiSocket> sockets = clients.Values.ToList();
+                if (sockets[client].Socket == null) {
+                    return;
+                }
                 if (sockets[client].Status == ClientStatus.BUSY) {
                     return;
                 }
@@ -101,7 +108,7 @@ namespace Fishare.Server {
                 }*/
                 file_size = new byte[] {file_info[110], file_info[111], file_info[112], file_info[113]};
                 Console.WriteLine(String.Format("Receiving {0} bytes file", BitConverter.ToUInt32(file_size)));
-                byte[] fileData = ReceiveAll(BitConverter.ToUInt32(file_size), sockets[client].Socket);
+                byte[] fileData = ReceiveAll(BitConverter.ToUInt32(file_size), ref sockets[client].Socket);
                 if (fileData == null) {
                     return;
                 }
@@ -115,6 +122,7 @@ namespace Fishare.Server {
                 dataToSend.AddRange(new byte[] { (byte)len, (byte)(len >> 8), (byte)(len >> 16), (byte)(len >> 24)});
                 dataToSend.AddRange(file_info.Skip(50).Take(60));
                 dataToSend.AddRange(fileData);
+                sockets = clients.Values.ToList();
                 if (clients.TryGetValue(Encoding.UTF8.GetString(receiver.ToArray()), out receiverSock)) {
                     receiverSock.Socket.Send(dataToSend.ToArray());
                     Console.WriteLine("File sended");
