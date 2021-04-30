@@ -47,20 +47,22 @@ namespace Fishare.Server {
             });
         }
 
-        public void CloseConnection(ref Socket client) {   
+        public void CloseConnection(string key) { 
+            ref Socket client = ref clients[key].Socket;
             client.Shutdown(SocketShutdown.Both);
             client.Disconnect(false);
             client.Dispose();
             Console.WriteLine("Connection closed");
         }
 
-        private byte[] ReceiveAll(uint size, ref Socket sock) {
+        private byte[] ReceiveAll(uint size, string key) {
+            ref Socket sock = ref clients[key].Socket;
             int total = 0;
             byte[] data = new byte[size];
             while (total < size) {
                 int getted = sock.Receive(data, total, (int)(size - total), SocketFlags.None);
                 if (getted == 0) {
-                    CloseConnection(ref sock);
+                    CloseConnection(key);
                     data = null;
                     break;
                 }
@@ -74,26 +76,30 @@ namespace Fishare.Server {
         }
         public async void AcceptFiles(int client) {
             await Task.Run(() => {
-                if (clients.Count == 0) {
+                if (clients.Count < 1) {
                     return;
                 }
-                List<FiSocket> sockets = clients.Values.ToList();
-                if (sockets[client].Socket == null) {
+                var sockets = clients.ToList();
+                if (sockets[client].Value.Socket == null) {
                     return;
                 }
-                if (sockets[client].Status == ClientStatus.BUSY) {
+                if (sockets[client].Value.Status == ClientStatus.BUSY) {
                     return;
                 }
-                sockets[client].Status = ClientStatus.BUSY;
+                sockets[client].Value.Status = ClientStatus.BUSY;
                 byte[] file_info = new byte[114];
-                if (!sockets[client].Socket.Connected || sockets[client] == null) {
+                if (!sockets[client].Value.Socket.Connected || sockets[client].Value == null) {
                     return;
                 }
-                if (sockets[client] != null) {
+                if (sockets[client].Value != null) {
                     try {
-                        int received = sockets[client].Socket.Receive(file_info);
+                        int received = sockets[client].Value.Socket.Receive(file_info);
+                        if (received == 0) {
+                            CloseConnection(sockets[client].Key);
+                        }
                     }
                     catch (SocketException){
+                        CloseConnection(sockets[client].Key);
                         return;
                     }
                 }
@@ -108,7 +114,7 @@ namespace Fishare.Server {
                 }*/
                 file_size = new byte[] {file_info[110], file_info[111], file_info[112], file_info[113]};
                 Console.WriteLine(String.Format("Receiving {0} bytes file", BitConverter.ToUInt32(file_size)));
-                byte[] fileData = ReceiveAll(BitConverter.ToUInt32(file_size), ref sockets[client].Socket);
+                byte[] fileData = ReceiveAll(BitConverter.ToUInt32(file_size), sockets[client].Key);
                 if (fileData == null) {
                     return;
                 }
@@ -122,7 +128,9 @@ namespace Fishare.Server {
                 dataToSend.AddRange(new byte[] { (byte)len, (byte)(len >> 8), (byte)(len >> 16), (byte)(len >> 24)});
                 dataToSend.AddRange(file_info.Skip(50).Take(60));
                 dataToSend.AddRange(fileData);
-                sockets = clients.Values.ToList();
+                if (clients.Count != 0) {
+                    sockets = clients.ToList();
+                }
                 if (clients.TryGetValue(Encoding.UTF8.GetString(receiver.ToArray()), out receiverSock)) {
                     receiverSock.Socket.Send(dataToSend.ToArray());
                     Console.WriteLine("File sended");
@@ -130,7 +138,7 @@ namespace Fishare.Server {
                 else {
                     Console.WriteLine("Error in getting receiver");
                 }
-                sockets[client].Status = ClientStatus.FREE;
+                sockets[client].Value.Status = ClientStatus.FREE;
             });
         }
     }
