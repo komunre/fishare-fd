@@ -39,8 +39,10 @@ namespace Fishare.Client {
             List<byte> data = new List<byte>();
             data.AddRange(ident);
             data.AddRange(Encoding.UTF8.GetBytes(receiver));
-            data.AddRange(Encoding.UTF8.GetBytes(fileName));
-            data.AddRange(new byte[60 - fileName.Length]);
+            string[] fileNameSplitted = fileName.Split("/");
+            string fileNameLast = fileNameSplitted[fileNameSplitted.Length - 1];
+            data.AddRange(Encoding.UTF8.GetBytes(fileNameLast));
+            data.AddRange(new byte[60 - fileNameLast.Length]);
             UInt32 len = (uint)fileContent.Length;
             data.AddRange(/*BitConverter.GetBytes(fileContent.Length)*/ new byte[] { (byte)(len), (byte)(len >> 8), (byte)(len >> 16), (byte)(len >> 24)});
             Console.WriteLine("Sending " + data.Count + " bytes");

@@ -23,7 +23,7 @@ namespace Fishare.Server {
         
         public void Initialize(int port) {
             FiSocket dummy = new FiSocket(null);
-            clients.Add(_dummySock, dummy); // Please replace it with real fix
+            clients.Add(_dummySock, dummy); // Please replace this with real fix
 
             IPHostEntry hostInfo = Dns.GetHostEntry(Dns.GetHostName());
             IPAddress address = /*hostInfo.AddressList[0];*/ IPAddress.Any;
