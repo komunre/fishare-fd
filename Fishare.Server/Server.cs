@@ -46,14 +46,30 @@ namespace Fishare.Server {
             });
         }
 
-        public void CloseConnection(int client) {   
-            if (!clients.ElementAt(client).Value.Connected) {
-                return;
-            }
-            clients.ElementAt(client).Value.Shutdown(SocketShutdown.Both);
-            clients.ElementAt(client).Value.Disconnect(false);
-            clients.ElementAt(client).Value.Close();
+        public void CloseConnection(Socket client) {   
+            client.Shutdown(SocketShutdown.Both);
+            client.Disconnect(false);
+            client.Close();
             Console.WriteLine("Connection closed");
+        }
+
+        private byte[] ReceiveAll(uint size, Socket sock) {
+            int total = 0;
+            byte[] data = new byte[size];
+            while (total < size) {
+                int getted = sock.Receive(data, total, (int)(size - total), SocketFlags.None);
+                if (getted == 0) {
+                    CloseConnection(sock);
+                    data = null;
+                    break;
+                }
+                total += getted;
+            }
+            Console.WriteLine("Total getted {0} bytes from stream", total);
+            if (total == 0){
+                return null;
+            }
+            return data;
         }
         public async void AcceptFiles(int client) {
             await Task.Run(() => {
@@ -70,7 +86,6 @@ namespace Fishare.Server {
                         int received = clients.ElementAt(client).Value.Receive(file_info);
                     }
                     catch (SocketException){
-                        CloseConnection(client);
                         return;
                     }
                 }
@@ -84,16 +99,19 @@ namespace Fishare.Server {
                     file_size = new byte[] {file_info[113], file_info[112], file_info[111], file_info[110]};
                 }*/
                 file_size = new byte[] {file_info[110], file_info[111], file_info[112], file_info[113]};
-                Console.WriteLine(String.Format("Receiving {0} bytes file", BitConverter.ToInt32(file_size)));
-                byte[] fileData = new byte[BitConverter.ToInt32(file_size)];
-                int receivedFile = clients.ElementAt(client).Value.Receive(fileData);
-                
+                Console.WriteLine(String.Format("Receiving {0} bytes file", BitConverter.ToUInt32(file_size)));
+                byte[] fileData = ReceiveAll(BitConverter.ToUInt32(file_size), clients.ElementAt(client).Value);
+                if (fileData == null) {
+                    return;
+                }
+
                 Console.WriteLine("Sending file...");
                 var receiver = file_info.Skip(25).Take(25);
                 Socket receiverSock;
                 List<byte> dataToSend = new List<byte>();
                 //dataToSend.AddRange(Encoding.UTF8.GetBytes(clients.ElementAt(client).Key));
-                dataToSend.AddRange(file_info.Skip(110).Take(4).ToArray());
+                Int32 len = fileData.Length;
+                dataToSend.AddRange(new byte[] { (byte)len, (byte)(len >> 8), (byte)(len >> 16), (byte)(len >> 24)});
                 dataToSend.AddRange(file_info.Skip(50).Take(60));
                 dataToSend.AddRange(fileData);
                 if (clients.TryGetValue(Encoding.UTF8.GetString(receiver.ToArray()), out receiverSock)) {

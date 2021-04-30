@@ -25,36 +25,44 @@ namespace Fishare.Client {
             Console.WriteLine(Encoding.UTF8.GetString(ident));
         }
 
-        public void SendFile(string fileName, string receiver) {
-            byte[] fileContent = File.ReadAllBytes(fileName);
+        private void SendFile(string fileName, string receiver) {
+            byte[] fileContent;
+            try {
+                fileContent = File.ReadAllBytes(fileName);
+            }
+            catch {
+                Console.WriteLine("Error reading file");
+                return;
+            }
             List<byte> data = new List<byte>();
             data.AddRange(ident);
             data.AddRange(Encoding.UTF8.GetBytes(receiver));
             data.AddRange(Encoding.UTF8.GetBytes(fileName));
             data.AddRange(new byte[60 - fileName.Length]);
-            data.AddRange(BitConverter.GetBytes(fileContent.Length));
+            UInt32 len = (uint)fileContent.Length;
+            data.AddRange(/*BitConverter.GetBytes(fileContent.Length)*/ new byte[] { (byte)(len), (byte)(len >> 8), (byte)(len >> 16), (byte)(len >> 24)});
             Console.WriteLine("Sending " + data.Count + " bytes");
 
             sender.Send(data.ToArray());
             sender.Send(fileContent);
-            Console.WriteLine("Sending ${0} bytes file", fileContent.Length);
+            Console.WriteLine("Sending {0} bytes file", fileContent.Length);
             Console.WriteLine("File sended");
         }
 
         public async void ReceiveFiles() {
             await Task.Run(() => {
                 while (true){
-                    byte[] info = new byte[29];
+                    byte[] info = new byte[64];
                     int receivedInfo = sender.Receive(info);
                     if (info.Length != receivedInfo) {
                         Console.WriteLine("Wrong file info received");
                         return;
                     }
 
-                    int fileSize = BitConverter.ToInt32(info.Take(4).ToArray());
+                    UInt32 fileSize = BitConverter.ToUInt32(info.Take(4).ToArray());
+                    Console.WriteLine("File size: " + fileSize);
                     byte[] fileData = new byte[fileSize];
                     int receivedData = sender.Receive(fileData);
-
 
                     string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+"/"+new Random().Next(10000000).ToString();
                     Console.WriteLine("Writing to " + path);
