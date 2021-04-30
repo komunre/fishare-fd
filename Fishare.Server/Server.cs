@@ -22,6 +22,9 @@ namespace Fishare.Server {
         }
         
         public void Initialize(int port) {
+            FiSocket dummy = new FiSocket(null);
+            clients.Add(_dummySock, dummy); // Please replace it with real fix
+
             IPHostEntry hostInfo = Dns.GetHostEntry(Dns.GetHostName());
             IPAddress address = /*hostInfo.AddressList[0];*/ IPAddress.Any;
             IPEndPoint endPoint = new IPEndPoint(address, port);
@@ -48,11 +51,13 @@ namespace Fishare.Server {
         }
 
         public void CloseConnection(string key) { 
-            ref Socket client = ref clients[key].Socket;
-            client.Shutdown(SocketShutdown.Both);
-            client.Disconnect(false);
-            client.Dispose();
-            Console.WriteLine("Connection closed");
+            lock (clients) {
+                ref Socket client = ref clients[key].Socket;
+                client.Shutdown(SocketShutdown.Both);
+                client.Disconnect(false);
+                client.Dispose();
+                Console.WriteLine("Connection closed");
+            }
         }
 
         private byte[] ReceiveAll(uint size, string key) {
@@ -76,14 +81,12 @@ namespace Fishare.Server {
         }
         public async void AcceptFiles(int client) {
             await Task.Run(() => {
-                if (clients.Count < 1) {
+                if (clients.Count < 1 || clients == null) {
                     return;
                 }
-                var sockets = clients.ToList();
-                if (sockets[client].Value.Socket == null) {
-                    return;
-                }
-                if (sockets[client].Value.Status == ClientStatus.BUSY) {
+                List<KeyValuePair<string, FiSocket>> sockets;
+                lock(clients) { sockets = clients.ToList(); }
+                if (sockets[client].Value.Socket == null || sockets[client].Value == null || sockets[client].Value.Status == ClientStatus.BUSY) {
                     return;
                 }
                 sockets[client].Value.Status = ClientStatus.BUSY;
@@ -131,7 +134,7 @@ namespace Fishare.Server {
                 if (clients.Count != 0) {
                     sockets = clients.ToList();
                 }
-                if (clients.TryGetValue(Encoding.UTF8.GetString(receiver.ToArray()), out receiverSock)) {
+                if (Encoding.UTF8.GetString(receiver.ToArray()) != _dummySock && clients.TryGetValue(Encoding.UTF8.GetString(receiver.ToArray()), out receiverSock)) {
                     receiverSock.Socket.Send(dataToSend.ToArray());
                     Console.WriteLine("File sended");
                 }
