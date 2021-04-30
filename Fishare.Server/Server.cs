@@ -14,8 +14,8 @@ namespace Fishare.Server {
     }
     public class Server {
         private Socket listener;
-        private Dictionary<string, Socket> clients = new Dictionary<string, Socket>();
-        private Dictionary<string, ClientStatus> clientStatuses = new Dictionary<string, ClientStatus>();
+        private Dictionary<string, FiSocket> clients = new Dictionary<string, FiSocket>();
+        private List<ClientStatus> clientStatuses = new List<ClientStatus>();
         public int ClientsCounter {
             get => clients.Count;
         }
@@ -38,8 +38,8 @@ namespace Fishare.Server {
                 while (true) {
                     Socket client = listener.Accept();
                     string ident = FishareRandom.RandomString();
-                    clients.Add(ident, client);
-                    clientStatuses.Add(ident, ClientStatus.FREE);
+                    clients.Add(ident, new FiSocket(client));
+                    clientStatuses.Add(ClientStatus.FREE);
                     client.Send(Encoding.UTF8.GetBytes(ident));
                     Console.WriteLine("Client connected");
                 }
@@ -73,17 +73,18 @@ namespace Fishare.Server {
         }
         public async void AcceptFiles(int client) {
             await Task.Run(() => {
-                if (clientStatuses.ElementAt(client).Value == ClientStatus.BUSY) {
+                List<FiSocket> sockets = clients.Values.ToList();
+                if (sockets[client].Status == ClientStatus.BUSY) {
                     return;
                 }
-                clientStatuses[clients.ElementAt(client).Key] = ClientStatus.BUSY;
+                sockets[client].Status = ClientStatus.BUSY;
                 byte[] file_info = new byte[114];
-                if (!clients.ElementAt(client).Value.Connected || clients.ElementAt(client).Value == null) {
+                if (!sockets[client].Socket.Connected || sockets[client] == null) {
                     return;
                 }
-                if (clients.ElementAt(client).Value != null) {
+                if (sockets[client] != null) {
                     try {
-                        int received = clients.ElementAt(client).Value.Receive(file_info);
+                        int received = sockets[client].Socket.Receive(file_info);
                     }
                     catch (SocketException){
                         return;
@@ -100,14 +101,14 @@ namespace Fishare.Server {
                 }*/
                 file_size = new byte[] {file_info[110], file_info[111], file_info[112], file_info[113]};
                 Console.WriteLine(String.Format("Receiving {0} bytes file", BitConverter.ToUInt32(file_size)));
-                byte[] fileData = ReceiveAll(BitConverter.ToUInt32(file_size), clients.ElementAt(client).Value);
+                byte[] fileData = ReceiveAll(BitConverter.ToUInt32(file_size), sockets[client].Socket);
                 if (fileData == null) {
                     return;
                 }
 
                 Console.WriteLine("Sending file...");
                 var receiver = file_info.Skip(25).Take(25);
-                Socket receiverSock;
+                FiSocket receiverSock;
                 List<byte> dataToSend = new List<byte>();
                 //dataToSend.AddRange(Encoding.UTF8.GetBytes(clients.ElementAt(client).Key));
                 Int32 len = fileData.Length;
@@ -115,13 +116,13 @@ namespace Fishare.Server {
                 dataToSend.AddRange(file_info.Skip(50).Take(60));
                 dataToSend.AddRange(fileData);
                 if (clients.TryGetValue(Encoding.UTF8.GetString(receiver.ToArray()), out receiverSock)) {
-                    receiverSock.Send(dataToSend.ToArray());
+                    receiverSock.Socket.Send(dataToSend.ToArray());
                     Console.WriteLine("File sended");
                 }
                 else {
                     Console.WriteLine("Error in getting receiver");
                 }
-                clientStatuses[clients.ElementAt(client).Key] = ClientStatus.FREE;
+                sockets[client].Status = ClientStatus.FREE;
             });
         }
     }

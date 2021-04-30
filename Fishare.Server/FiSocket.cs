@@ -1,15 +1,13 @@
 using System.Net.Sockets;
 
 namespace Fishare.Server {
-    public class FiSocket : Socket {
-        public bool Disposed;
-        public FiSocket(AddressFamily family, SocketType type, ProtocolType ptype) : base(family, type, ptype) {
-            Disposed = false;
-        }
-
-        public new void Close(){
-            base.Close();
-            Disposed = true;
+    public class FiSocket {
+        public bool Disposed = false;
+        public ClientStatus Status;
+        public Socket Socket;
+        public FiSocket(Socket sock) {
+            Socket = sock;
+            Status = ClientStatus.FREE;
         }
     }
 }
