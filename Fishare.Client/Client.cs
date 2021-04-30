@@ -49,6 +49,24 @@ namespace Fishare.Client {
             Console.WriteLine("File sended");
         }
 
+        private byte[] ReceiveAll(uint size, Socket sock) {
+            int total = 0;
+            byte[] data = new byte[size];
+            while (total < size) {
+                int getted = sock.Receive(data, total, (int)(size - total), SocketFlags.None);
+                if (getted == 0) {
+                    data = null;
+                    break;
+                }
+                total += getted;
+            }
+            Console.WriteLine("Total getted {0} bytes from stream", total);
+            if (total == 0){
+                return null;
+            }
+            return data;
+        }
+
         public async void ReceiveFiles() {
             await Task.Run(() => {
                 while (true){
@@ -61,8 +79,7 @@ namespace Fishare.Client {
 
                     UInt32 fileSize = BitConverter.ToUInt32(info.Take(4).ToArray());
                     Console.WriteLine("File size: " + fileSize);
-                    byte[] fileData = new byte[fileSize];
-                    int receivedData = sender.Receive(fileData);
+                    byte[] fileData = ReceiveAll(fileSize, sender);
 
                     string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+"/"+new Random().Next(10000000).ToString();
                     Console.WriteLine("Writing to " + path);
