@@ -8,7 +8,7 @@ namespace Fishare.Client
         static void Main(string[] args)
         {
             Client client = new Client();
-            client.Connect("localhost");
+            client.Connect();
             client.ReceiveFiles();
 
             client.GetFileData();

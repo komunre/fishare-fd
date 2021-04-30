@@ -7,13 +7,12 @@ namespace Fishare.Server
     {
         static void Main(string[] args)
         {
-            if (args.Length > 1) {
-                if (args[1] == "debug") {
-                    Debug.Debugging = true;
-                }
+            if (args.Length < 1) {
+                Console.WriteLine("Please enter port");
+                return;
             }
             Server server = new Server();
-            server.Initialize(12999);
+            server.Initialize(int.Parse(args[0]));
             server.Listen();
             while (true) {
                 for (int i = 0; i < server.ClientsCounter; i++) {

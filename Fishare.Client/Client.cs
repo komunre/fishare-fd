@@ -12,10 +12,12 @@ namespace Fishare.Client {
         Socket sender;
         byte[] ident = new byte[25];
         
-        public void Connect(string address) {
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(address);  
+        public void Connect() {
+            string addrp = File.ReadAllText("config.txt");
+            string[] splitted = addrp.Split(":");
+            IPHostEntry ipHostInfo = Dns.GetHostEntry(splitted[0]);  
             IPAddress ipAddress = ipHostInfo.AddressList[0];  
-            IPEndPoint remoteEP = new IPEndPoint(ipAddress,12999);
+            IPEndPoint remoteEP = new IPEndPoint(ipAddress,int.Parse(splitted[1]));
 
             sender = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
