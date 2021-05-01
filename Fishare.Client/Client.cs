@@ -48,8 +48,8 @@ namespace Fishare.Client {
             Console.WriteLine("Sending " + data.Count + " bytes");
 
             sender.Send(data.ToArray());
-            sender.Send(fileContent);
             Console.WriteLine("Sending {0} bytes file", fileContent.Length);
+            sender.Send(fileContent);
             Console.WriteLine("File sended");
         }
 
@@ -63,6 +63,7 @@ namespace Fishare.Client {
                     break;
                 }
                 total += getted;
+                Console.WriteLine("Getting... {0}%", (float)((float)total / (float)size) * 100);
             }
             Console.WriteLine("Total getted {0} bytes from stream", total);
             if (total == 0){
