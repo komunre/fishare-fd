@@ -86,7 +86,7 @@ namespace Fishare.Server {
                 }
                 List<KeyValuePair<string, FiSocket>> sockets;
                 lock(clients) { sockets = clients.ToList(); }
-                if (sockets[client].Value.Socket == null || sockets[client].Value == null || sockets[client].Value.Status == ClientStatus.BUSY) {
+                if (sockets[client].Key == _dummySock || sockets[client].Value.Socket == null || sockets[client].Value == null || sockets[client].Value.Status == ClientStatus.BUSY) {
                     return;
                 }
                 sockets[client].Value.Status = ClientStatus.BUSY;
