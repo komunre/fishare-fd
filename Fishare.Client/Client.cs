@@ -83,10 +83,18 @@ namespace Fishare.Client {
                     }
 
                     UInt32 fileSize = BitConverter.ToUInt32(info.Take(4).ToArray());
+                    byte[] fileByteName = info.Skip(4).Take(60).ToArray();
+                    int counter = 0;
+                    for (byte fileCh = fileByteName[0]; fileCh != 0; counter++) {
+                        fileCh = fileByteName[counter];
+                    }
+                    counter--;
+                    fileByteName = fileByteName.Take(counter).ToArray();
+                    string fileName = Encoding.UTF8.GetString(fileByteName);
                     Console.WriteLine("File size: " + fileSize);
                     byte[] fileData = ReceiveAll(fileSize, sender);
 
-                    string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+"/"+new Random().Next(10000000).ToString();
+                    string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+"/"+fileName;
                     Console.WriteLine("Writing to " + path);
                     Console.WriteLine(fileData);
                     File.WriteAllBytes(path, fileData);
