@@ -18,7 +18,7 @@ namespace Fishare.Client {
             IPHostEntry ipHostInfo = Dns.GetHostEntry(splitted[0]);  
             IPAddress ipAddress = ipHostInfo.AddressList[0];  
             if (ipHostInfo.AddressList.Length > 1) {
-            ipAddress = ipHostInfo.AddressList[1];
+                ipAddress = ipHostInfo.AddressList[1];
             }
             IPEndPoint remoteEP = new IPEndPoint(ipAddress,int.Parse(splitted[1]));
             
