@@ -6,6 +6,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fishare.Shared;
 
 namespace Fishare.Client {
     public class Client {
@@ -26,9 +27,9 @@ namespace Fishare.Client {
             
             
             sender.Connect(remoteEP);
-            Console.WriteLine("Connected");
+            Debugger.Log(0, "Connected");
             sender.Receive(ident);
-            Console.WriteLine(Encoding.UTF8.GetString(ident));
+            Debugger.Log(0, Encoding.UTF8.GetString(ident));
         }
 
         private void SendFile(string fileName, string receiver) {
@@ -37,7 +38,7 @@ namespace Fishare.Client {
                 fileContent = File.ReadAllBytes(fileName);
             }
             catch {
-                Console.WriteLine("Error reading file");
+                Debugger.Log(0, "Error reading file");
                 return;
             }
 			
@@ -53,19 +54,19 @@ namespace Fishare.Client {
             }
             string fileNameLast = fileNameSplitted[fileNameSplitted.Length - 1];
             if(fileNameLast.Length > 60){
-                Console.WriteLine("Too long filename");
+                Debugger.Log(0, "Too long filename");
                 return;
             }
             data.AddRange(Encoding.UTF8.GetBytes(fileNameLast));
             data.AddRange(new byte[60 - fileNameLast.Length]);
             UInt32 len = (uint)fileContent.Length;
             data.AddRange(/*BitConverter.GetBytes(fileContent.Length)*/ new byte[] { (byte)(len), (byte)(len >> 8), (byte)(len >> 16), (byte)(len >> 24)});
-            Console.WriteLine("Sending " + data.Count + " bytes");
+            Debugger.Log(9, "Sending " + data.Count + " bytes");
 
             sender.Send(data.ToArray());
-            Console.WriteLine("Sending {0} bytes file", fileContent.Length);
+            Debugger.Log(3, String.Format("Sending {0} bytes file", fileContent.Length));
             sender.Send(fileContent);
-            Console.WriteLine("File sended");
+            Debugger.Log(0, "File sended");
         }
 
         private byte[] ReceiveAll(uint size, Socket sock) {
@@ -78,9 +79,9 @@ namespace Fishare.Client {
                     break;
                 }
                 total += getted;
-                Console.WriteLine("Getting... {0}%", (float)((float)total / (float)size) * 100);
+                Debugger.Log(1, String.Format("Getting... {0}%", (float)((float)total / (float)size) * 100));
             }
-            Console.WriteLine("Total getted {0} bytes from stream", total);
+            Debugger.Log(9, String.Format("Total getted {0} bytes from stream", total));
             if (total == 0){
                 return null;
             }
@@ -93,7 +94,7 @@ namespace Fishare.Client {
                     byte[] info = new byte[64];
                     int receivedInfo = sender.Receive(info);
                     if (info.Length != receivedInfo) {
-                        Console.WriteLine("Wrong file info received");
+                        Debugger.Log(0, "Wrong file info received");
                         return;
                     }
 
@@ -106,14 +107,13 @@ namespace Fishare.Client {
                     counter--;
                     fileByteName = fileByteName.Take(counter).ToArray();
                     string fileName = Encoding.UTF8.GetString(fileByteName);
-                    Console.WriteLine("File size: " + fileSize);
+                    Debugger.Log(2, "File size: " + fileSize);
                     byte[] fileData = ReceiveAll(fileSize, sender);
 
                     string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+"/"+fileName;
-                    Console.WriteLine("Writing to " + path);
-                    Console.WriteLine(fileData);
+                    Debugger.Log(0, "Writing to " + path);
                     File.WriteAllBytes(path, fileData);
-                    Console.WriteLine("File received");
+                    Debugger.Log(0, "File received");
                 }
             });
         }
@@ -121,9 +121,9 @@ namespace Fishare.Client {
         public async void GetFileData() {
             await Task.Run(() => {
                 while (true) {
-                    Console.Write("Enter file name: ");
+                    Debugger.Log(0, "Enter file name: ");
                     string file = Console.ReadLine();
-                    Console.Write("Enter receiver identificator: ");
+                    Debugger.Log(0, "Enter receiver identificator: ");
                     string ident = Console.ReadLine();
             
                     SendFile(file, ident);

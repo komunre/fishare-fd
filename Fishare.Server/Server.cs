@@ -5,6 +5,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
+using Fishare.Shared;
 
 namespace Fishare.Server {
 
@@ -33,19 +34,19 @@ namespace Fishare.Server {
         
             listener.Bind(endPoint);
             listener.Listen(100);
-            Console.WriteLine("Server started");
+            Debugger.Log(0, "Server started");
         }
 
         public async void Listen() {
             await Task.Run(() => {
-                Console.WriteLine("Listening...");
+                Debugger.Log(0, "Listening...");
                 while (true) {
                     Socket client = listener.Accept();
                     string ident = FishareRandom.RandomString();
                     clients.Add(ident, new FiSocket(client));
                     clientStatuses.Add(ClientStatus.FREE);
                     client.Send(Encoding.UTF8.GetBytes(ident));
-                    Console.WriteLine("Client connected");
+                    Debugger.Log(0, "Client connected");
                 }
             });
         }
@@ -56,7 +57,7 @@ namespace Fishare.Server {
                 client.Shutdown(SocketShutdown.Both);
                 client.Disconnect(false);
                 client.Dispose();
-                Console.WriteLine("Connection closed");
+                Debugger.Log(0, "Connection closed");
             }
         }
 
@@ -73,7 +74,7 @@ namespace Fishare.Server {
                 }
                 total += getted;
             }
-            Console.WriteLine("Total getted {0} bytes from stream", total);
+            Debugger.Log(2, String.Format("Total getted {0} bytes from stream", total));
             if (total == 0){
                 return null;
             }
@@ -116,13 +117,13 @@ namespace Fishare.Server {
                     file_size = new byte[] {file_info[113], file_info[112], file_info[111], file_info[110]};
                 }*/
                 file_size = new byte[] {file_info[110], file_info[111], file_info[112], file_info[113]};
-                Console.WriteLine(String.Format("Receiving {0} bytes file", BitConverter.ToUInt32(file_size)));
+                Debugger.Log(3, String.Format("Receiving {0} bytes file", BitConverter.ToUInt32(file_size)));
                 byte[] fileData = ReceiveAll(BitConverter.ToUInt32(file_size), sockets[client].Key);
                 if (fileData == null) {
                     return;
                 }
 
-                Console.WriteLine("Sending file...");
+                Debugger.Log(0, "Sending file...");
                 var receiver = file_info.Skip(25).Take(25);
                 FiSocket receiverSock;
                 List<byte> dataToSend = new List<byte>();
@@ -139,14 +140,14 @@ namespace Fishare.Server {
                         receiverSock.Socket.Send(dataToSend.ToArray());
                     }
                     catch (SocketException) {
-                        Console.WriteLine("Writing error");
+                        Debugger.Log(0, "Writing error");
                         CloseConnection(Encoding.UTF8.GetString(receiver.ToArray()));
                         return;
                     }
-                    Console.WriteLine("File sended");
+                    Debugger.Log(0, "File sended");
                 }
                 else {
-                    Console.WriteLine("Error in getting receiver");
+                    Debugger.Log(0, "Error in getting receiver");
                 }
                 sockets[client].Value.Status = ClientStatus.FREE;
             });
