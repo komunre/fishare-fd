@@ -18,7 +18,7 @@ namespace Fishare.Client {
             IPHostEntry ipHostInfo = Dns.GetHostEntry(splitted[0]);  
             IPAddress ipAddress = ipHostInfo.AddressList[0];  
             IPEndPoint remoteEP = new IPEndPoint(ipAddress,int.Parse(splitted[1]));
-
+    
             sender = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             sender.Connect(remoteEP);
@@ -39,7 +39,13 @@ namespace Fishare.Client {
             List<byte> data = new List<byte>();
             data.AddRange(ident);
             data.AddRange(Encoding.UTF8.GetBytes(receiver));
-            string[] fileNameSplitted = fileName.Split("/");
+            string[] fileNameSplitted;
+            if (fileName.Contains('\\') && Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                fileNameSplitted = fileName.Split('\\');
+            }
+            else {
+                fileNameSplitted = fileName.Split('/');
+            }
             string fileNameLast = fileNameSplitted[fileNameSplitted.Length - 1];
             data.AddRange(Encoding.UTF8.GetBytes(fileNameLast));
             data.AddRange(new byte[60 - fileNameLast.Length]);
