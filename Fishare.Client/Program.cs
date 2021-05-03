@@ -1,12 +1,10 @@
-﻿using System;
-using System.Threading.Tasks;
-using Fishare.Shared;
+﻿using Fishare.Shared;
 
 namespace Fishare.Client
 {
-    class Program
+    public static class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             if (args.Length > 0) { 
                 Debugger.LogLevel = int.Parse(args[0]);

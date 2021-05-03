@@ -1,10 +1,10 @@
-using System.Net;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Linq;
 using Fishare.Shared;
 
 namespace Fishare.Server {
@@ -26,7 +26,6 @@ namespace Fishare.Server {
             FiSocket dummy = new FiSocket(null);
             clients.Add(_dummySock, dummy); // Please replace this with real fix
 
-            IPHostEntry hostInfo = Dns.GetHostEntry(Dns.GetHostName());
             IPAddress address = /*hostInfo.AddressList[0];*/ IPAddress.Any;
             IPEndPoint endPoint = new IPEndPoint(address, port);
 
@@ -74,7 +73,7 @@ namespace Fishare.Server {
                 }
                 total += getted;
             }
-            Debugger.Log(2, String.Format("Total getted {0} bytes from stream", total));
+            Debugger.Log(2, $"Total getted {total} bytes from stream");
             if (total == 0){
                 return null;
             }
@@ -116,8 +115,8 @@ namespace Fishare.Server {
                     Console.WriteLine("Converting to little endian");
                     file_size = new byte[] {file_info[113], file_info[112], file_info[111], file_info[110]};
                 }*/
-                file_size = new byte[] {file_info[110], file_info[111], file_info[112], file_info[113]};
-                Debugger.Log(3, String.Format("Receiving {0} bytes file", BitConverter.ToUInt32(file_size)));
+                file_size = new[] {file_info[110], file_info[111], file_info[112], file_info[113]};
+                Debugger.Log(3, $"Receiving {BitConverter.ToUInt32(file_size)} bytes file");
                 byte[] fileData = ReceiveAll(BitConverter.ToUInt32(file_size), sockets[client].Key);
                 if (fileData == null) {
                     return;
@@ -129,7 +128,7 @@ namespace Fishare.Server {
                 List<byte> dataToSend = new List<byte>();
                 //dataToSend.AddRange(Encoding.UTF8.GetBytes(clients.ElementAt(client).Key));
                 Int32 len = fileData.Length;
-                dataToSend.AddRange(new byte[] { (byte)len, (byte)(len >> 8), (byte)(len >> 16), (byte)(len >> 24)});
+                dataToSend.AddRange(new[] { (byte)len, (byte)(len >> 8), (byte)(len >> 16), (byte)(len >> 24)});
                 dataToSend.AddRange(file_info.Skip(50).Take(60));
                 dataToSend.AddRange(fileData);
                 if (clients.Count != 0) {
