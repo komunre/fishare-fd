@@ -24,13 +24,11 @@ namespace Fishare.Client {
             
             sender = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             
-            
             sender.Connect(remoteEP);
             Console.WriteLine("Connected");
             sender.Receive(ident);
             Console.WriteLine(Encoding.UTF8.GetString(ident));
-            
-            
+
             Console.WriteLine(ipHostInfo.AddressList[1]);
         }
 
