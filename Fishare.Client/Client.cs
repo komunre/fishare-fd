@@ -13,18 +13,25 @@ namespace Fishare.Client {
         byte[] ident = new byte[25];
         
         public void Connect() {
-            string addrp = File.ReadAllText("config.txt");
+            string addrp = File.ReadAllText(Path.Combine(System.IO.Directory.GetCurrentDirectory(), "config.txt"));
             string[] splitted = addrp.Split(":");
             IPHostEntry ipHostInfo = Dns.GetHostEntry(splitted[0]);  
             IPAddress ipAddress = ipHostInfo.AddressList[0];  
+            if (ipHostInfo.AddressList.Length > 1) {
+            ipAddress = ipHostInfo.AddressList[1];
+            }
             IPEndPoint remoteEP = new IPEndPoint(ipAddress,int.Parse(splitted[1]));
-
+            
             sender = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
+            
+            
             sender.Connect(remoteEP);
             Console.WriteLine("Connected");
             sender.Receive(ident);
             Console.WriteLine(Encoding.UTF8.GetString(ident));
+            
+            
+            Console.WriteLine(ipHostInfo.AddressList[1]);
         }
 
         private void SendFile(string fileName, string receiver) {
