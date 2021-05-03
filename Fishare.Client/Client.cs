@@ -49,10 +49,10 @@ namespace Fishare.Client {
             data.AddRange(Encoding.UTF8.GetBytes(receiver));
             string[] fileNameSplitted = fileName.Split("/");
             string fileNameLast = fileNameSplitted[fileNameSplitted.Length - 1];
-			if(fileNameLast.Length > 60){
-				Console.WriteLine("Too long filename");
-				return;
-			}
+            if(fileNameLast.Length > 60){
+                Console.WriteLine("Too long filename");
+                return;
+            }
             data.AddRange(Encoding.UTF8.GetBytes(fileNameLast));
             data.AddRange(new byte[60 - fileNameLast.Length]);
             UInt32 len = (uint)fileContent.Length;
