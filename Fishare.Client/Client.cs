@@ -18,7 +18,7 @@ namespace Fishare.Client {
             IPHostEntry ipHostInfo = Dns.GetHostEntry(splitted[0]);  
             IPAddress ipAddress = ipHostInfo.AddressList[0];  
             if (ipHostInfo.AddressList.Length > 1) {
-                ipAddress = ipHostInfo.AddressList[1];
+            	ipAddress = ipHostInfo.AddressList[1];
             }
             IPEndPoint remoteEP = new IPEndPoint(ipAddress,int.Parse(splitted[1]));
     
@@ -40,6 +40,7 @@ namespace Fishare.Client {
                 Console.WriteLine("Error reading file");
                 return;
             }
+			
             List<byte> data = new List<byte>();
             data.AddRange(ident);
             data.AddRange(Encoding.UTF8.GetBytes(receiver));
@@ -51,6 +52,10 @@ namespace Fishare.Client {
                 fileNameSplitted = fileName.Split('/');
             }
             string fileNameLast = fileNameSplitted[fileNameSplitted.Length - 1];
+            if(fileNameLast.Length > 60){
+                Console.WriteLine("Too long filename");
+                return;
+            }
             data.AddRange(Encoding.UTF8.GetBytes(fileNameLast));
             data.AddRange(new byte[60 - fileNameLast.Length]);
             UInt32 len = (uint)fileContent.Length;
