@@ -60,11 +60,11 @@ namespace Fishare.Client {
             data.AddRange(Encoding.UTF8.GetBytes(fileNameLast));
             data.AddRange(new byte[60 - fileNameLast.Length]);
             UInt32 len = (uint)fileContent.Length;
-            data.AddRange(/*BitConverter.GetBytes(fileContent.Length)*/ new byte[] { (byte)(len), (byte)(len >> 8), (byte)(len >> 16), (byte)(len >> 24)});
+            data.AddRange(/*BitConverter.GetBytes(fileContent.Length)*/ new[] { (byte)(len), (byte)(len >> 8), (byte)(len >> 16), (byte)(len >> 24)});
             Debugger.Log(9, "Sending " + data.Count + " bytes");
 
             sender.Send(data.ToArray());
-            Debugger.Log(3, String.Format("Sending {0} bytes file", fileContent.Length));
+            Debugger.Log(3, $"Sending {fileContent.Length} bytes file");
             sender.Send(fileContent);
             Debugger.Log(0, "File sended");
         }
@@ -79,9 +79,9 @@ namespace Fishare.Client {
                     break;
                 }
                 total += getted;
-                Debugger.Log(1, String.Format("Getting... {0}%", (float)((float)total / (float)size) * 100));
+                Debugger.Log(1, $"Getting... {total / (float) size * 100}%");
             }
-            Debugger.Log(9, String.Format("Total getted {0} bytes from stream", total));
+            Debugger.Log(9, $"Total getted {total} bytes from stream");
             if (total == 0){
                 return null;
             }

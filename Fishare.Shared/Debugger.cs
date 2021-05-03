@@ -11,12 +11,9 @@ namespace Fishare.Shared
             }
         }
 
-        public static bool CheckLogLevel() {
-            if (LogLevel < 0 || LogLevel > 9) {
-                return false;
-            }
-
-            return true;
+        public static bool CheckLogLevel()
+        {
+            return LogLevel >= 0 && LogLevel <= 9;
         }
     }
 }
