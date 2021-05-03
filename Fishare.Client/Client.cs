@@ -29,9 +29,6 @@ namespace Fishare.Client {
             Console.WriteLine("Connected");
             sender.Receive(ident);
             Console.WriteLine(Encoding.UTF8.GetString(ident));
-            
-            
-            Console.WriteLine(ipHostInfo.AddressList[1]);
         }
 
         private void SendFile(string fileName, string receiver) {
