@@ -1,10 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System;
-using System.IO;
 using System.Text;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Fishare.Shared;
 
@@ -14,7 +14,7 @@ namespace Fishare.Client {
         byte[] ident = new byte[25];
         
         public void Connect() {
-            string addrp = File.ReadAllText(Path.Combine(System.IO.Directory.GetCurrentDirectory(), "config.txt"));
+            string addrp = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "config.txt"));
             string[] splitted = addrp.Split(":");
             IPHostEntry ipHostInfo = Dns.GetHostEntry(splitted[0]);  
             IPAddress ipAddress = ipHostInfo.AddressList[0];  

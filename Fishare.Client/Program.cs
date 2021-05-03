@@ -1,10 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
-using Fishare.Shared;
+﻿using Fishare.Shared;
 
 namespace Fishare.Client
 {
-    class Program
+    static class Program
     {
         static void Main(string[] args)
         {

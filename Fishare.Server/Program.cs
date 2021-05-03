@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Threading;
 
 namespace Fishare.Server
 {
-    class Program
+    static class Program
     {
         static void Main(string[] args)
         {
