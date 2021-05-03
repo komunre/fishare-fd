@@ -135,7 +135,14 @@ namespace Fishare.Server {
                     sockets = clients.ToList();
                 }
                 if (Encoding.UTF8.GetString(receiver.ToArray()) != _dummySock && clients.TryGetValue(Encoding.UTF8.GetString(receiver.ToArray()), out receiverSock)) {
-                    receiverSock.Socket.Send(dataToSend.ToArray());
+                    try {
+                        receiverSock.Socket.Send(dataToSend.ToArray());
+                    }
+                    catch (SocketException) {
+                        Console.WriteLine("Writing error");
+                        CloseConnection(Encoding.UTF8.GetString(receiver.ToArray()));
+                        return;
+                    }
                     Console.WriteLine("File sended");
                 }
                 else {
